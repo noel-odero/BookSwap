@@ -1,4 +1,4 @@
-import 'dart:io';
+// dart:io intentionally not imported here to keep web compatibility; StorageService handles platform specifics
 import 'package:flutter/foundation.dart';
 import '../models/book.dart';
 import '../services/firestore_service.dart';
@@ -71,7 +71,7 @@ class BooksProvider with ChangeNotifier {
     required BookCondition condition,
     required String ownerId,
     required String ownerName,
-    File? imageFile,
+    dynamic imageFile,
   }) async {
     _setLoading(true);
     _error = null;
@@ -117,7 +117,7 @@ class BooksProvider with ChangeNotifier {
     required String author,
     required String swapFor,
     required BookCondition condition,
-    File? newImageFile,
+    dynamic newImageFile,
     String? existingImageUrl,
     required String ownerId,
   }) async {

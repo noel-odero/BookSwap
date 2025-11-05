@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,18 +23,21 @@ class _PostBookScreenState extends State<PostBookScreen> {
   final _authorCtrl = TextEditingController();
   final _swapForCtrl = TextEditingController();
   BookCondition _condition = BookCondition.good;
-  File? _imageFile;
+  XFile? _imageFile;
+  Uint8List? _imageBytes;
   bool _isSubmitting = false;
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 800,
+      maxWidth: 1600,
     );
     if (picked != null) {
+      final bytes = await picked.readAsBytes();
       setState(() {
-        _imageFile = File(picked.path);
+        _imageFile = picked;
+        _imageBytes = bytes;
       });
     }
   }
@@ -154,13 +157,32 @@ class _PostBookScreenState extends State<PostBookScreen> {
                   }).toList(),
                 ),
                 const SizedBox(height: 12),
-                _imageFile != null
-                    ? Image.file(_imageFile!, height: 180, fit: BoxFit.cover)
-                    : ElevatedButton.icon(
-                        onPressed: _pickImage,
-                        icon: const Icon(Icons.photo),
-                        label: const Text('Pick cover image'),
-                      ),
+                _imageBytes != null
+                    ? Image.memory(_imageBytes!, height: 180, fit: BoxFit.cover)
+                    : (_imageFile != null
+                          ? FutureBuilder<Uint8List>(
+                              future: _imageFile!.readAsBytes(),
+                              builder: (context, snap) {
+                                if (snap.hasData) {
+                                  return Image.memory(
+                                    snap.data!,
+                                    height: 180,
+                                    fit: BoxFit.cover,
+                                  );
+                                }
+                                return const SizedBox(
+                                  height: 180,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              },
+                            )
+                          : ElevatedButton.icon(
+                              onPressed: _pickImage,
+                              icon: const Icon(Icons.photo),
+                              label: const Text('Pick cover image'),
+                            )),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _isSubmitting ? null : _handlePost,
