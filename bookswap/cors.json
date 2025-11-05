@@ -1,0 +1,21 @@
+[
+  {
+    "origin": [
+      "http://localhost:52326",
+      "http://localhost:61852",
+      "http://localhost:53721",
+      "http://localhost",
+      "http://127.0.0.1"
+    ],
+    "method": ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS"],
+    "responseHeader": [
+      "Content-Type",
+      "x-goog-resumable",
+      "Authorization",
+      "X-Requested-With",
+      "Origin",
+      "Accept"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]
