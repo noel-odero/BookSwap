@@ -60,7 +60,28 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
       return false;
     } catch (e) {
-      _error = e.toString();
+      // Provide friendlier messages for common FirebaseAuth errors
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'invalid-email':
+            _error = 'The email address is not valid.';
+            break;
+          case 'email-already-in-use':
+            _error = 'This email is already in use. Try signing in.';
+            break;
+          case 'weak-password':
+            _error = 'The password is too weak. Use at least 6 characters.';
+            break;
+          case 'operation-not-allowed':
+            _error =
+                'Email/password sign-in is disabled for this project. Enable it in the Firebase console.';
+            break;
+          default:
+            _error = e.message ?? e.toString();
+        }
+      } else {
+        _error = e.toString();
+      }
       _setLoading(false);
       return false;
     }
@@ -87,7 +108,29 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
       return false;
     } catch (e) {
-      _error = e.toString();
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'user-not-found':
+            _error = 'No user found for that email.';
+            break;
+          case 'wrong-password':
+            _error = 'Incorrect password provided.';
+            break;
+          case 'invalid-email':
+            _error = 'The email address is not valid.';
+            break;
+          case 'user-disabled':
+            _error = 'This user has been disabled.';
+            break;
+          case 'operation-not-allowed':
+            _error = 'This sign-in method is not enabled for the project.';
+            break;
+          default:
+            _error = e.message ?? e.toString();
+        }
+      } else {
+        _error = e.toString();
+      }
       _setLoading(false);
       return false;
     }
