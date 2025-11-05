@@ -11,6 +11,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationReminders = true;
   bool _emailUpdates = true;
+  // Fallback storage when shared_preferences plugin isn't available (e.g., web dev without restart)
+  final Map<String, bool> _prefsFallback = {};
 
   @override
   void initState() {
@@ -19,25 +21,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _notificationReminders = prefs.getBool('notificationReminders') ?? true;
-      _emailUpdates = prefs.getBool('emailUpdates') ?? true;
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _notificationReminders = prefs.getBool('notificationReminders') ?? true;
+        _emailUpdates = prefs.getBool('emailUpdates') ?? true;
+      });
+    } catch (e) {
+      // If plugin isn't available (MissingPluginException), fall back to in-memory values
+      // This can happen during web dev if the app wasn't fully restarted after adding the plugin.
+      // Use any previously stored fallback values or defaults.
+      setState(() {
+        _notificationReminders =
+            _prefsFallback['notificationReminders'] ?? true;
+        _emailUpdates = _prefsFallback['emailUpdates'] ?? true;
+      });
+    }
   }
 
   Future<void> _setNotificationReminders(bool v) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('notificationReminders', v);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('notificationReminders', v);
+    } catch (e) {
+      // fallback to in-memory map when plugin missing
+      _prefsFallback['notificationReminders'] = v;
+    }
     if (!mounted) return;
     setState(() => _notificationReminders = v);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          v
+              ? 'Notification reminders enabled'
+              : 'Notification reminders disabled',
+        ),
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   Future<void> _setEmailUpdates(bool v) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('emailUpdates', v);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('emailUpdates', v);
+    } catch (e) {
+      _prefsFallback['emailUpdates'] = v;
+    }
     if (!mounted) return;
     setState(() => _emailUpdates = v);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(v ? 'Email updates enabled' : 'Email updates disabled'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   void _showAbout() {
