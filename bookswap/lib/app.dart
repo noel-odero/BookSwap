@@ -13,7 +13,7 @@ import 'widgets/custom_bottom_nav.dart';
 
 /// Main app widget that configures theme and routing
 class BookSwapApp extends StatelessWidget {
-  const BookSwapApp({Key? key}) : super(key: key);
+  const BookSwapApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +72,7 @@ class BookSwapApp extends StatelessWidget {
         // Input decoration theme
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.white.withOpacity(0.1),
+          fillColor: const Color.fromRGBO(255, 255, 255, 0.1),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -115,7 +115,7 @@ class BookSwapApp extends StatelessWidget {
 /// MainScreen with bottom navigation
 /// This is the container for all main app screens
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();

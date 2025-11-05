@@ -85,13 +85,18 @@ class _PostBookScreenState extends State<PostBookScreen> {
 
     setState(() => _isSubmitting = false);
 
+    if (!mounted) return;
+
     if (success) {
       Navigator.of(context).pop();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(booksProv.error ?? 'Failed to post book')),
-      );
+      return;
     }
+
+    // Guard context usage after async
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(booksProv.error ?? 'Failed to post book')),
+    );
   }
 
   @override

@@ -70,6 +70,8 @@ class BookCard extends StatelessWidget {
                       offeredTo: book.ownerId,
                     );
 
+                    if (!context.mounted) return;
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -160,6 +162,8 @@ class BookCard extends StatelessWidget {
                                           offeredBy: currentUserId,
                                           offeredTo: book.ownerId,
                                         );
+
+                                    if (!context.mounted) return;
 
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
