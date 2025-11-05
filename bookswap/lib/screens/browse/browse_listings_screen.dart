@@ -5,6 +5,7 @@ import '../../providers/books_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/book_card.dart';
 import '../../models/book.dart';
+import '../post_book/post_book_screen.dart';
 
 class BrowseListingsScreen extends StatefulWidget {
   const BrowseListingsScreen({Key? key}) : super(key: key);
@@ -30,30 +31,41 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
     final userId = authProvider.currentUser?.uid ?? '';
     final browseBooks = userId.isNotEmpty
         ? booksProvider.getBrowseBooks(userId)
-        : booksProvider.allBooks.where((b) => b.status == SwapStatus.available).toList();
+        : booksProvider.allBooks
+              .where((b) => b.status == SwapStatus.available)
+              .toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Browse Listings'),
+      appBar: AppBar(title: const Text('Browse Listings')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PostBookScreen()),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
       body: booksProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : browseBooks.isEmpty
-              ? const Center(child: Text('No listings found'))
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    // trigger a refresh by re-listening
-                    booksProvider.listenToAllBooks();
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: browseBooks.length,
-                    itemBuilder: (context, index) {
-                      final book = browseBooks[index];
-                      return BookCard(book: book);
-                    },
-                  ),
-                ),
+          ? const Center(child: Text('No listings found'))
+          : RefreshIndicator(
+              onRefresh: () async {
+                // trigger a refresh by re-listening
+                booksProvider.listenToAllBooks();
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: browseBooks.length,
+                itemBuilder: (context, index) {
+                  final book = browseBooks[index];
+                  return BookCard(book: book);
+                },
+              ),
+            ),
     );
   }
 }
+
+

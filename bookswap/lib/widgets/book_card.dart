@@ -11,13 +11,18 @@ class BookCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  final swapProvider = context.read<SwapProvider>();
+    final swapProvider = context.read<SwapProvider>();
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         leading: book.imageUrl != null
-            ? Image.network(book.imageUrl!, width: 56, height: 56, fit: BoxFit.cover)
+            ? Image.network(
+                book.imageUrl!,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+              )
             : const SizedBox(width: 56, height: 56, child: Icon(Icons.book)),
         title: Text(book.title),
         subtitle: Text('${book.author} • ${book.condition.label}'),
@@ -28,19 +33,34 @@ class BookCard extends StatelessWidget {
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Confirm Swap'),
-                      content: Text('Send a swap request to ${book.ownerName}?'),
+                      content: Text(
+                        'Send a swap request to ${book.ownerName}?',
+                      ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Send')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Send'),
+                        ),
                       ],
                     ),
                   );
 
                   if (confirmed == true) {
-                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                    final authProvider = Provider.of<AuthProvider>(
+                      context,
+                      listen: false,
+                    );
                     final currentUserId = authProvider.currentUser?.uid;
                     if (currentUserId == null || book.id == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You must be signed in to send a swap')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('You must be signed in to send a swap'),
+                        ),
+                      );
                       return;
                     }
 
@@ -51,7 +71,11 @@ class BookCard extends StatelessWidget {
                     );
 
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(success ? 'Swap request sent' : 'Failed to send swap')),
+                      SnackBar(
+                        content: Text(
+                          success ? 'Swap request sent' : 'Failed to send swap',
+                        ),
+                      ),
                     );
                   }
                 },
@@ -68,7 +92,10 @@ class BookCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(book.title, style: Theme.of(context).textTheme.headlineMedium),
+                  Text(
+                    book.title,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
                   const SizedBox(height: 8),
                   Text('By ${book.author}'),
                   const SizedBox(height: 8),
@@ -87,39 +114,74 @@ class BookCard extends StatelessWidget {
                                     context: context,
                                     builder: (context) => AlertDialog(
                                       title: const Text('Confirm Swap'),
-                                      content: Text('Send a swap request to ${book.ownerName}?'),
+                                      content: Text(
+                                        'Send a swap request to ${book.ownerName}?',
+                                      ),
                                       actions: [
-                                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                                        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Send')),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text('Send'),
+                                        ),
                                       ],
                                     ),
                                   );
 
                                   if (confirmed == true) {
-                                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                                    final currentUserId = authProvider.currentUser?.uid;
-                                    if (currentUserId == null || book.id == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You must be signed in to send a swap')));
+                                    final authProvider =
+                                        Provider.of<AuthProvider>(
+                                          context,
+                                          listen: false,
+                                        );
+                                    final currentUserId =
+                                        authProvider.currentUser?.uid;
+                                    if (currentUserId == null ||
+                                        book.id == null) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'You must be signed in to send a swap',
+                                          ),
+                                        ),
+                                      );
                                       return;
                                     }
 
-                                    final success = await swapProvider.initiateSwap(
-                                      bookId: book.id!,
-                                      offeredBy: currentUserId,
-                                      offeredTo: book.ownerId,
-                                    );
+                                    final success = await swapProvider
+                                        .initiateSwap(
+                                          bookId: book.id!,
+                                          offeredBy: currentUserId,
+                                          offeredTo: book.ownerId,
+                                        );
 
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(success ? 'Swap request sent' : 'Failed to send swap')),
+                                      SnackBar(
+                                        content: Text(
+                                          success
+                                              ? 'Swap request sent'
+                                              : 'Failed to send swap',
+                                        ),
+                                      ),
                                     );
                                   }
                                 }
                               : null,
-                          child: Text(book.status == SwapStatus.available ? 'Swap' : book.status.label),
+                          child: Text(
+                            book.status == SwapStatus.available
+                                ? 'Swap'
+                                : book.status.label,
+                          ),
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
