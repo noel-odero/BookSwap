@@ -67,5 +67,3 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
     );
   }
 }
-
-

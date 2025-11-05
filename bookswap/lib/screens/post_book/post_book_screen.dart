@@ -9,7 +9,9 @@ import '../../providers/auth_provider.dart';
 import '../../models/book.dart';
 
 class PostBookScreen extends StatefulWidget {
-  const PostBookScreen({Key? key}) : super(key: key);
+  final Book? bookToEdit;
+
+  const PostBookScreen({Key? key, this.bookToEdit}) : super(key: key);
 
   @override
   State<PostBookScreen> createState() => _PostBookScreenState();
@@ -52,15 +54,31 @@ class _PostBookScreenState extends State<PostBookScreen> {
     setState(() => _isSubmitting = true);
 
     final booksProv = context.read<BooksProvider>();
-    final success = await booksProv.addBook(
-      title: _titleCtrl.text.trim(),
-      author: _authorCtrl.text.trim(),
-      swapFor: _swapForCtrl.text.trim(),
-      condition: _condition,
-      ownerId: currentUser.uid,
-      ownerName: currentUser.displayName ?? 'Unknown',
-      imageFile: _imageFile,
-    );
+    bool success = false;
+
+    if (widget.bookToEdit == null) {
+      success = await booksProv.addBook(
+        title: _titleCtrl.text.trim(),
+        author: _authorCtrl.text.trim(),
+        swapFor: _swapForCtrl.text.trim(),
+        condition: _condition,
+        ownerId: currentUser.uid,
+        ownerName: currentUser.displayName ?? 'Unknown',
+        imageFile: _imageFile,
+      );
+    } else {
+      // Update existing
+      success = await booksProv.updateBook(
+        bookId: widget.bookToEdit!.id ?? '',
+        title: _titleCtrl.text.trim(),
+        author: _authorCtrl.text.trim(),
+        swapFor: _swapForCtrl.text.trim(),
+        condition: _condition,
+        newImageFile: _imageFile,
+        existingImageUrl: widget.bookToEdit!.imageUrl,
+        ownerId: currentUser.uid,
+      );
+    }
 
     setState(() => _isSubmitting = false);
 
@@ -79,6 +97,18 @@ class _PostBookScreenState extends State<PostBookScreen> {
     _authorCtrl.dispose();
     _swapForCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.bookToEdit != null) {
+      final b = widget.bookToEdit!;
+      _titleCtrl.text = b.title;
+      _authorCtrl.text = b.author;
+      _swapForCtrl.text = b.swapFor;
+      _condition = b.condition;
+    }
   }
 
   @override
