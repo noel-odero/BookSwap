@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/books_provider.dart';
@@ -51,21 +52,22 @@ class BookSwapApp extends StatelessWidget {
           type: BottomNavigationBarType.fixed,
         ),
 
-        // Text theme
-        textTheme: const TextTheme(
-          headlineLarge: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-          headlineMedium: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-          bodyLarge: TextStyle(fontSize: 16, color: Colors.white70),
-          bodyMedium: TextStyle(fontSize: 14, color: Colors.white60),
-        ),
+        // Text theme using Google Fonts (Noto Sans) with color/size overrides
+        textTheme: GoogleFonts.notoSansTextTheme(Theme.of(context).textTheme)
+            .copyWith(
+              headlineLarge: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              headlineMedium: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+              bodyLarge: const TextStyle(fontSize: 16, color: Colors.white70),
+              bodyMedium: const TextStyle(fontSize: 14, color: Colors.white60),
+            ),
 
         // Input decoration theme
         inputDecorationTheme: InputDecorationTheme(
