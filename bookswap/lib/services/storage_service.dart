@@ -53,8 +53,14 @@ class StorageService {
 
       final url = await ref.getDownloadURL();
       return url;
+    } on FirebaseException catch (e) {
+      // Common failure on web: CORS/preflight blocked by the storage service.
+      // Surface a clearer message so the UI can display guidance to the developer/user.
+      throw Exception(
+        'Storage upload failed: ${e.message ?? e.code}. If you are running on web, this is often caused by missing CORS configuration on your Cloud Storage bucket. See https://cloud.google.com/storage/docs/configuring-cors',
+      );
     } catch (e) {
-      rethrow;
+      throw Exception(e.toString());
     }
   }
 

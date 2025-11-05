@@ -122,7 +122,11 @@ class _PostBookScreenState extends State<PostBookScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Post a Book')),
+      appBar: AppBar(
+        title: const Text('Post a Book'),
+        // show a back button when this route can pop
+        leading: Navigator.canPop(context) ? const BackButton() : null,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),

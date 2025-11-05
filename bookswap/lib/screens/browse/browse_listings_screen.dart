@@ -36,7 +36,11 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
               .toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Browse Listings')),
+      appBar: AppBar(
+        title: const Text('Browse Listings'),
+        // show back arrow when navigated to from another route
+        leading: Navigator.canPop(context) ? const BackButton() : null,
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
