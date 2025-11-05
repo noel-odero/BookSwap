@@ -7,7 +7,7 @@ import '../providers/auth_provider.dart';
 class BookCard extends StatelessWidget {
   final Book book;
 
-  const BookCard({Key? key, required this.book}) : super(key: key);
+  const BookCard({super.key, required this.book});
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +50,7 @@ class BookCard extends StatelessWidget {
                   );
 
                   if (confirmed == true) {
+                    if (!context.mounted) return;
                     final authProvider = Provider.of<AuthProvider>(
                       context,
                       listen: false,
@@ -135,6 +136,7 @@ class BookCard extends StatelessWidget {
                                   );
 
                                   if (confirmed == true) {
+                                    if (!context.mounted) return;
                                     final authProvider =
                                         Provider.of<AuthProvider>(
                                           context,

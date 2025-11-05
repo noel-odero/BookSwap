@@ -11,7 +11,7 @@ import '../../models/book.dart';
 class PostBookScreen extends StatefulWidget {
   final Book? bookToEdit;
 
-  const PostBookScreen({Key? key, this.bookToEdit}) : super(key: key);
+  const PostBookScreen({super.key, this.bookToEdit});
 
   @override
   State<PostBookScreen> createState() => _PostBookScreenState();

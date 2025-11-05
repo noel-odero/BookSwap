@@ -8,7 +8,7 @@ import '../../models/book.dart';
 import '../post_book/post_book_screen.dart';
 
 class BrowseListingsScreen extends StatefulWidget {
-  const BrowseListingsScreen({Key? key}) : super(key: key);
+  const BrowseListingsScreen({super.key});
 
   @override
   State<BrowseListingsScreen> createState() => _BrowseListingsScreenState();

@@ -4,7 +4,7 @@ import '../../providers/auth_provider.dart';
 
 /// Signup screen with email verification
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({Key? key}) : super(key: key);
+  const SignupScreen({super.key});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
