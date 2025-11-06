@@ -16,7 +16,7 @@ void main() async {
   // During local development use the Firebase Storage emulator to avoid CORS/billing
   if (kDebugMode) {
     try {
-      FirebaseStorage.instance.useStorageEmulator('localhost', 9199);
+      FirebaseStorage.instance.useStorageEmulator('localhost', 8080);
     } catch (_) {
       // ignore: avoid_print
       print('Could not connect to Storage emulator');

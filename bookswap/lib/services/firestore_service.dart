@@ -73,14 +73,15 @@ class FirestoreService {
     List<String> participants,
   ) async {
     final doc = _chatsRef.doc(chatId);
-    final snap = await doc.get();
-    if (!snap.exists) {
-      await doc.set({
-        'participants': participants,
-        'lastMessage': null,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    }
+    // Avoid reading the document first: some security rules block reads
+    // on non-existent chat docs even though creation would be allowed.
+    // Directly attempt to create/set the document; if it already exists
+    // this will overwrite with equivalent data (participants remain same).
+    await doc.set({
+      'participants': participants,
+      'lastMessage': null,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   /// Stream chats that include the given userId
