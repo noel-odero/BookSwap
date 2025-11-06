@@ -3,9 +3,11 @@ import '../models/book.dart';
 
 class FirestoreService {
   final CollectionReference _booksRef;
+  final CollectionReference _chatsRef;
 
   FirestoreService()
-    : _booksRef = FirebaseFirestore.instance.collection('books');
+    : _booksRef = FirebaseFirestore.instance.collection('books'),
+      _chatsRef = FirebaseFirestore.instance.collection('chats');
 
   /// Stream of all books
   Stream<List<Book>> getAllBooks() {
@@ -55,5 +57,71 @@ class FirestoreService {
 
   Future<void> deleteBook(String bookId) async {
     await _booksRef.doc(bookId).delete();
+  }
+
+  // -------------------- Chats --------------------
+
+  /// Create or return a deterministic chatId for two participants
+  String chatIdFor(String a, String b) {
+    final ordered = [a, b]..sort();
+    return '${ordered[0]}_${ordered[1]}';
+  }
+
+  /// Ensure chat document exists with participants list
+  Future<void> ensureChatExists(
+    String chatId,
+    List<String> participants,
+  ) async {
+    final doc = _chatsRef.doc(chatId);
+    final snap = await doc.get();
+    if (!snap.exists) {
+      await doc.set({
+        'participants': participants,
+        'lastMessage': null,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
+  /// Stream chats that include the given userId
+  Stream<List<QueryDocumentSnapshot>> getUserChats(String userId) {
+    return _chatsRef
+        .where('participants', arrayContains: userId)
+        .orderBy('updatedAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs);
+  }
+
+  /// Stream messages for a chat, ordered by timestamp
+  Stream<List<QueryDocumentSnapshot>> getChatMessages(String chatId) {
+    return _chatsRef
+        .doc(chatId)
+        .collection('messages')
+        .orderBy('timestamp', descending: false)
+        .snapshots()
+        .map((snap) => snap.docs);
+  }
+
+  /// Send a message in a chat
+  Future<void> sendMessage({
+    required String chatId,
+    required String senderId,
+    required String senderName,
+    required String text,
+  }) async {
+    final messagesRef = _chatsRef.doc(chatId).collection('messages');
+    final data = {
+      'senderId': senderId,
+      'senderName': senderName,
+      'text': text,
+      'timestamp': FieldValue.serverTimestamp(),
+    };
+    // Add message
+    await messagesRef.add(data);
+    // Update chat meta
+    await _chatsRef.doc(chatId).update({
+      'lastMessage': text,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 }

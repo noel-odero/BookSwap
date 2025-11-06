@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/book.dart';
 import 'package:provider/provider.dart';
+import '../services/firestore_service.dart';
+import '../screens/chats/conversation_screen.dart';
 import '../providers/swap_provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -26,65 +28,114 @@ class BookCard extends StatelessWidget {
             : const SizedBox(width: 56, height: 56, child: Icon(Icons.book)),
         title: Text(book.title),
         subtitle: Text('${book.author} • ${book.condition.label}'),
-        trailing: book.status == SwapStatus.available
-            ? ElevatedButton(
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Confirm Swap'),
-                      content: Text(
-                        'Send a swap request to ${book.ownerName}?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Send'),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirmed == true) {
-                    if (!context.mounted) return;
-                    final authProvider = Provider.of<AuthProvider>(
-                      context,
-                      listen: false,
-                    );
-                    final currentUserId = authProvider.currentUser?.uid;
-                    if (currentUserId == null || book.id == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('You must be signed in to send a swap'),
+        trailing: SizedBox(
+          width: 140,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (book.status == SwapStatus.available)
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Confirm Swap'),
+                          content: Text(
+                            'Send a swap request to ${book.ownerName}?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Send'),
+                            ),
+                          ],
                         ),
                       );
-                      return;
-                    }
 
-                    final success = await swapProvider.initiateSwap(
-                      bookId: book.id!,
-                      offeredBy: currentUserId,
-                      offeredTo: book.ownerId,
-                    );
+                      if (confirmed == true) {
+                        if (!context.mounted) return;
+                        final authProvider = Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final currentUserId = authProvider.currentUser?.uid;
+                        if (currentUserId == null || book.id == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'You must be signed in to send a swap',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
 
-                    if (!context.mounted) return;
+                        final success = await swapProvider.initiateSwap(
+                          bookId: book.id!,
+                          offeredBy: currentUserId,
+                          offeredTo: book.ownerId,
+                        );
 
+                        if (!context.mounted) return;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              success
+                                  ? 'Swap request sent'
+                                  : 'Failed to send swap',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text('Swap'),
+                  ),
+                )
+              else
+                Expanded(child: Text(book.status.label)),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.chat_bubble_outline),
+                onPressed: () async {
+                  // Start or open chat with owner
+                  final authProvider = Provider.of<AuthProvider>(
+                    context,
+                    listen: false,
+                  );
+                  final currentUserId = authProvider.currentUser?.uid;
+                  if (currentUserId == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          success ? 'Swap request sent' : 'Failed to send swap',
-                        ),
-                      ),
+                      const SnackBar(content: Text('Sign in to message')),
                     );
+                    return;
                   }
+                  final peerId = book.ownerId;
+                  final chatId = FirestoreService().chatIdFor(
+                    currentUserId,
+                    peerId,
+                  );
+                  final navigator = Navigator.of(context);
+                  await FirestoreService().ensureChatExists(chatId, [
+                    currentUserId,
+                    peerId,
+                  ]);
+                  navigator.push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          ConversationScreen(chatId: chatId, peerId: peerId),
+                    ),
+                  );
                 },
-                child: const Text('Swap'),
-              )
-            : Text(book.status.label),
+              ),
+            ],
+          ),
+        ),
         onTap: () {
           // Show details
           showModalBottomSheet(
