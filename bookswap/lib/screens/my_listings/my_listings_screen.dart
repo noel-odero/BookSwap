@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/books_provider.dart';
 import '../../models/book.dart';
+import '../post_book/post_book_screen.dart';
 
 class MyListingsScreen extends StatelessWidget {
   const MyListingsScreen({super.key});
@@ -13,6 +14,15 @@ class MyListingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('My Listings')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PostBookScreen()),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
       body: booksProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : books.isEmpty

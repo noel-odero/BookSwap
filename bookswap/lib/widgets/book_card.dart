@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../models/book.dart';
 import 'package:provider/provider.dart';
@@ -19,12 +21,37 @@ class BookCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         leading: book.imageUrl != null
-            ? Image.network(
-                book.imageUrl!,
-                width: 56,
-                height: 56,
-                fit: BoxFit.cover,
-              )
+            ? (() {
+                final url = book.imageUrl!;
+                if (url.startsWith('data:')) {
+                  // base64 data URL
+                  try {
+                    final parts = url.split(',');
+                    final b64 = parts.length > 1 ? parts[1] : '';
+                    final bytes = base64Decode(b64);
+                    return Image.memory(
+                      bytes,
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.cover,
+                    );
+                  } catch (_) {
+                    return const SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: Icon(Icons.broken_image),
+                    );
+                  }
+                }
+
+                // fallback to network image
+                return Image.network(
+                  url,
+                  width: 56,
+                  height: 56,
+                  fit: BoxFit.cover,
+                );
+              })()
             : const SizedBox(width: 56, height: 56, child: Icon(Icons.book)),
         title: Text(book.title),
         subtitle: Text('${book.author} • ${book.condition.label}'),

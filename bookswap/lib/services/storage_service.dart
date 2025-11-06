@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
@@ -54,11 +55,31 @@ class StorageService {
       final url = await ref.getDownloadURL();
       return url;
     } on FirebaseException catch (e) {
-      // Common failure on web: CORS/preflight blocked by the storage service.
-      // Surface a clearer message so the UI can display guidance to the developer/user.
-      throw Exception(
-        'Storage upload failed: ${e.message ?? e.code}. If you are running on web, this is often caused by missing CORS configuration on your Cloud Storage bucket. See https://cloud.google.com/storage/docs/configuring-cors',
-      );
+      // If Storage is not available (no bucket / CORS / emulator not running),
+      // fallback to encoding the image as a base64 data URL and return that
+      // so the app can still persist images without Cloud Storage.
+      try {
+        Uint8List bytes;
+        if (imageFile is XFile) {
+          bytes = await imageFile.readAsBytes();
+        } else if (imageFile is File) {
+          bytes = await imageFile.readAsBytes();
+        } else if (imageFile is Uint8List) {
+          bytes = imageFile;
+        } else {
+          throw Exception(
+            'Unsupported image type for fallback: ${imageFile.runtimeType}',
+          );
+        }
+
+        final base64Str = base64Encode(bytes);
+        final dataUrl = 'data:image/jpeg;base64,$base64Str';
+        return dataUrl;
+      } catch (_) {
+        throw Exception(
+          'Storage upload failed: ${e.message ?? e.code}. Also failed to fallback to base64 encoding.',
+        );
+      }
     } catch (e) {
       throw Exception(e.toString());
     }

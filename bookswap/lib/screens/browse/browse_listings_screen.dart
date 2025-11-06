@@ -5,7 +5,6 @@ import '../../providers/books_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/book_card.dart';
 import '../../models/book.dart';
-import '../post_book/post_book_screen.dart';
 
 class BrowseListingsScreen extends StatefulWidget {
   const BrowseListingsScreen({super.key});
@@ -40,15 +39,6 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
         title: const Text('Browse Listings'),
         // show back arrow when navigated to from another route
         leading: Navigator.canPop(context) ? const BackButton() : null,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const PostBookScreen()),
-          );
-        },
-        child: const Icon(Icons.add),
       ),
       body: booksProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
