@@ -4,10 +4,12 @@ import '../models/book.dart';
 class FirestoreService {
   final CollectionReference _booksRef;
   final CollectionReference _chatsRef;
+  final CollectionReference _usersRef;
 
   FirestoreService()
     : _booksRef = FirebaseFirestore.instance.collection('books'),
-      _chatsRef = FirebaseFirestore.instance.collection('chats');
+      _chatsRef = FirebaseFirestore.instance.collection('chats'),
+      _usersRef = FirebaseFirestore.instance.collection('users');
 
   /// Stream of all books
   Stream<List<Book>> getAllBooks() {
@@ -101,6 +103,16 @@ class FirestoreService {
         .orderBy('timestamp', descending: false)
         .snapshots()
         .map((snap) => snap.docs);
+  }
+
+  /// Get a single user document snapshot
+  Future<DocumentSnapshot> getUserDoc(String userId) async {
+    return await _usersRef.doc(userId).get();
+  }
+
+  /// Stream a user document
+  Stream<DocumentSnapshot> getUserStream(String userId) {
+    return _usersRef.doc(userId).snapshots();
   }
 
   /// Send a message in a chat

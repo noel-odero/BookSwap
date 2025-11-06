@@ -43,6 +43,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
         senderName: me.displayName ?? 'Unknown',
         text: text,
       );
+      debugPrint('Message sent: chat=${widget.chatId} sender=${me.uid}');
       _ctrl.clear();
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('Send failed: $e')));
@@ -55,7 +56,22 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final me = auth.currentUser;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.peerId)),
+      appBar: AppBar(
+        title: StreamBuilder<DocumentSnapshot>(
+          stream: _fs.getUserStream(widget.peerId),
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return Text(widget.peerId);
+            }
+            if (snap.hasData) {
+              final data = snap.data!.data() as Map<String, dynamic>? ?? {};
+              final name = data['displayName'] as String? ?? widget.peerId;
+              return Text(name);
+            }
+            return Text(widget.peerId);
+          },
+        ),
+      ),
       body: Column(
         children: [
           Expanded(

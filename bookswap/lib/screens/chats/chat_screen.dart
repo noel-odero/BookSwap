@@ -56,7 +56,23 @@ class ChatScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                title: Text(peerId == user.uid ? 'You' : peerId),
+                title: FutureBuilder(
+                  future: FirestoreService().getUserDoc(peerId),
+                  builder: (context, snap) {
+                    if (snap.connectionState == ConnectionState.waiting) {
+                      return Text(peerId == user.uid ? 'You' : peerId);
+                    }
+                    if (snap.hasData) {
+                      final data =
+                          (snap.data as DocumentSnapshot).data()
+                              as Map<String, dynamic>? ??
+                          {};
+                      final name = data['displayName'] as String? ?? peerId;
+                      return Text(name);
+                    }
+                    return Text(peerId == user.uid ? 'You' : peerId);
+                  },
+                ),
                 subtitle: Text(
                   lastMessage,
                   maxLines: 1,
