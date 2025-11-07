@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/book.dart';
 import 'package:provider/provider.dart';
 import '../services/firestore_service.dart';
@@ -185,9 +186,50 @@ class BookCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      '${book.ownerName} • ${book.condition.label}',
-                      style: Theme.of(context).textTheme.bodySmall,
+                    // Owner row: avatar + name + condition
+                    StreamBuilder<DocumentSnapshot>(
+                      stream: FirestoreService().getUserStream(book.ownerId),
+                      builder: (context, snap) {
+                        String displayName = book.ownerName;
+                        String? photoUrl;
+                        if (snap.hasData) {
+                          final data =
+                              snap.data!.data() as Map<String, dynamic>?;
+                          if (data != null) {
+                            displayName =
+                                (data['displayName'] as String?) ?? displayName;
+                            photoUrl = data['photoUrl'] as String?;
+                          }
+                        }
+
+                        return Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 12,
+                              backgroundColor: Colors.grey[300],
+                              backgroundImage:
+                                  (photoUrl != null &&
+                                      photoUrl.startsWith('http'))
+                                  ? NetworkImage(photoUrl)
+                                  : null,
+                              child: (photoUrl == null)
+                                  ? Text(
+                                      _initials(displayName),
+                                      style: const TextStyle(fontSize: 10),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                '$displayName • ${book.condition.label}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -339,5 +381,12 @@ class BookCard extends StatelessWidget {
     if (diff.inHours >= 1) return '${diff.inHours} hours ago';
     if (diff.inMinutes >= 1) return '${diff.inMinutes} mins ago';
     return 'Just now';
+  }
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '';
+    if (parts.length == 1) return parts[0].substring(0, 1).toUpperCase();
+    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
   }
 }
