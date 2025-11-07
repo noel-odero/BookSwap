@@ -24,6 +24,12 @@ class _ConversationScreenState extends State<ConversationScreen> {
   final FirestoreService _fs = FirestoreService();
 
   @override
+  void initState() {
+    super.initState();
+    debugPrint('Peer ID: ${widget.peerId}');
+  }
+
+  @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
@@ -57,18 +63,21 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: StreamBuilder<DocumentSnapshot>(
-          stream: _fs.getUserStream(widget.peerId),
+        title: FutureBuilder<DocumentSnapshot>(
+          future: _fs.getUserDoc(widget.peerId),
           builder: (context, snap) {
-            if (snap.connectionState == ConnectionState.waiting) {
-              return Text(widget.peerId);
-            }
             if (snap.hasData) {
               final data = snap.data!.data() as Map<String, dynamic>? ?? {};
-              final name = data['displayName'] as String? ?? widget.peerId;
+              final name = data['displayName'] as String? ?? 'Unknown';
+              debugPrint('User data fetched: $data');
               return Text(name);
             }
-            return Text(widget.peerId);
+            if (snap.hasError) {
+              debugPrint('Error fetching user: ${snap.error}');
+              return const Text('Unknown');
+            }
+            // While loading, show a placeholder
+            return const Text('Loading...');
           },
         ),
       ),

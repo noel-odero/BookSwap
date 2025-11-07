@@ -15,6 +15,15 @@ service cloud.firestore {
         && resource.data.ownerId == request.auth.uid;
     }
 
+    // Users: public read of basic profile info (displayName), writes allowed only by the user
+    match /users/{userId} {
+      // Allow anyone to read basic profile info so names can be shown in the UI
+      allow read: if true;
+
+      // Only the authenticated user can create or update their own profile
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+    }
+
     // Chats: only participants can access/modify chat docs and messages
     match /chats/{chatId} {
       // Creating the chat doc: creator must be authenticated and included in participants
