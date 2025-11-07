@@ -1,5 +1,7 @@
 // dart:io intentionally not imported here to keep web compatibility; StorageService handles platform specifics
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 import '../models/book.dart';
 import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
@@ -77,13 +79,35 @@ class BooksProvider with ChangeNotifier {
     _error = null;
 
     try {
-      // Upload image if provided
+      // If an image is provided, encode it as a base64 data URL and store
+      // directly in the Firestore document. This lets the app work without
+      // Firebase Storage configured.
       String? imageUrl;
       if (imageFile != null) {
-        imageUrl = await _storageService.uploadBookImage(
-          imageFile: imageFile,
-          userId: ownerId,
-        );
+        Uint8List bytes;
+        if (imageFile is XFile) {
+          bytes = await imageFile.readAsBytes();
+        } else if (imageFile is Uint8List) {
+          bytes = imageFile;
+        } else {
+          // Try to call readAsBytes if available (duck typing)
+          try {
+            final dynamic f = imageFile;
+            final result = await f.readAsBytes();
+            if (result is Uint8List) {
+              bytes = result;
+            } else {
+              throw ArgumentError('Unsupported image bytes result');
+            }
+          } catch (e) {
+            throw ArgumentError(
+              'Unsupported image type: ${imageFile.runtimeType}',
+            );
+          }
+        }
+
+        final base64Str = base64Encode(bytes);
+        imageUrl = 'data:image/jpeg;base64,$base64Str';
       }
 
       // Create book object
@@ -127,18 +151,41 @@ class BooksProvider with ChangeNotifier {
     try {
       String? imageUrl = existingImageUrl;
 
-      // If new image provided, upload it
+      // If new image provided, encode to base64 and replace. If existing
+      // image was stored in Cloud Storage (non-data URL), attempt deletion.
       if (newImageFile != null) {
-        // Delete old image if exists
-        if (existingImageUrl != null) {
-          await _storageService.deleteImageByUrl(existingImageUrl);
+        // Delete old image from storage ONLY if it looks like a remote URL
+        if (existingImageUrl != null && !existingImageUrl.startsWith('data:')) {
+          try {
+            await _storageService.deleteImageByUrl(existingImageUrl);
+          } catch (_) {
+            // ignore delete failures; we still proceed to replace image
+          }
         }
 
-        // Upload new image
-        imageUrl = await _storageService.uploadBookImage(
-          imageFile: newImageFile,
-          userId: ownerId,
-        );
+        Uint8List bytes;
+        if (newImageFile is XFile) {
+          bytes = await newImageFile.readAsBytes();
+        } else if (newImageFile is Uint8List) {
+          bytes = newImageFile;
+        } else {
+          try {
+            final dynamic f = newImageFile;
+            final result = await f.readAsBytes();
+            if (result is Uint8List) {
+              bytes = result;
+            } else {
+              throw ArgumentError('Unsupported image bytes result');
+            }
+          } catch (e) {
+            throw ArgumentError(
+              'Unsupported image type: ${newImageFile.runtimeType}',
+            );
+          }
+        }
+
+        final base64Str = base64Encode(bytes);
+        imageUrl = 'data:image/jpeg;base64,$base64Str';
       }
 
       // Update Firestore document
@@ -167,9 +214,13 @@ class BooksProvider with ChangeNotifier {
     _error = null;
 
     try {
-      // Delete image from Storage if exists
-      if (imageUrl != null) {
-        await _storageService.deleteImageByUrl(imageUrl);
+      // Delete image from Storage if exists and looks like a remote URL
+      if (imageUrl != null && !imageUrl.startsWith('data:')) {
+        try {
+          await _storageService.deleteImageByUrl(imageUrl);
+        } catch (_) {
+          // ignore failures
+        }
       }
 
       // Delete from Firestore

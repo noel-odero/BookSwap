@@ -97,33 +97,28 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                       onPressed: swapProvider.isLoading
                                           ? null
                                           : () async {
+                                              final messenger =
+                                                  ScaffoldMessenger.of(context);
                                               final ok = await swapProvider
                                                   .acceptSwap(b.id!);
+                                              if (!mounted) return;
                                               if (ok) {
-                                                if (mounted) {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                        'Offer accepted',
-                                                      ),
+                                                messenger.showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Offer accepted',
                                                     ),
-                                                  );
-                                                }
+                                                  ),
+                                                );
                                               } else {
-                                                if (mounted) {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        swapProvider.error ??
-                                                            'Failed to accept offer',
-                                                      ),
+                                                messenger.showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      swapProvider.error ??
+                                                          'Failed to accept offer',
                                                     ),
-                                                  );
-                                                }
+                                                  ),
+                                                );
                                               }
                                             },
                                       child: const Text('Accept'),
@@ -136,33 +131,28 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                       onPressed: swapProvider.isLoading
                                           ? null
                                           : () async {
+                                              final messenger =
+                                                  ScaffoldMessenger.of(context);
                                               final ok = await swapProvider
                                                   .rejectSwap(b.id!);
+                                              if (!mounted) return;
                                               if (ok) {
-                                                if (mounted) {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                        'Offer rejected',
-                                                      ),
+                                                messenger.showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Offer rejected',
                                                     ),
-                                                  );
-                                                }
+                                                  ),
+                                                );
                                               } else {
-                                                if (mounted) {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        swapProvider.error ??
-                                                            'Failed to reject offer',
-                                                      ),
+                                                messenger.showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      swapProvider.error ??
+                                                          'Failed to reject offer',
                                                     ),
-                                                  );
-                                                }
+                                                  ),
+                                                );
                                               }
                                             },
                                       child: const Text('Reject'),
