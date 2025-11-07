@@ -121,7 +121,7 @@ class SwapProvider with ChangeNotifier {
 
   /// Cancel a pending offer (by the person who made it)
   Future<bool> cancelOffer(String bookId) async {
-    return rejectSwap(bookId); // Same logic as reject
+    return rejectSwap(bookId); // Same logic as reject the swap offer
   }
 
   /// Clear error message

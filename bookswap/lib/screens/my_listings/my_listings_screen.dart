@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/books_provider.dart';
 import '../../providers/swap_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../models/book.dart';
 import '../../widgets/book_card.dart';
 import '../post_book/post_book_screen.dart';
 
@@ -67,6 +69,113 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                     itemCount: offers.length,
                     itemBuilder: (context, index) {
                       final b = offers[index];
+                      final currentUser = Provider.of<AuthProvider>(
+                        context,
+                      ).currentUser;
+                      final isOwner =
+                          currentUser != null && currentUser.uid == b.ownerId;
+
+                      // If current user is the owner and there's a pending offer,
+                      // show Accept / Reject buttons so the owner can respond.
+                      if (isOwner && b.status == SwapStatus.pending) {
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                BookCard(book: b),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                      ),
+                                      onPressed: swapProvider.isLoading
+                                          ? null
+                                          : () async {
+                                              final ok = await swapProvider
+                                                  .acceptSwap(b.id!);
+                                              if (ok) {
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                        'Offer accepted',
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              } else {
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        swapProvider.error ??
+                                                            'Failed to accept offer',
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                      child: const Text('Accept'),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                      ),
+                                      onPressed: swapProvider.isLoading
+                                          ? null
+                                          : () async {
+                                              final ok = await swapProvider
+                                                  .rejectSwap(b.id!);
+                                              if (ok) {
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                        'Offer rejected',
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              } else {
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        swapProvider.error ??
+                                                            'Failed to reject offer',
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                      child: const Text('Reject'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      // Otherwise show a normal book card
                       return BookCard(book: b);
                     },
                   ),
