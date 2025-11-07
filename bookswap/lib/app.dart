@@ -166,6 +166,14 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentIndex,
         onTap: (index) {
+          // If user taps the Chats item, open the chat list as a separate page
+          if (index == 2) {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ChatScreen()));
+            return;
+          }
+
           setState(() {
             _currentIndex = index;
           });

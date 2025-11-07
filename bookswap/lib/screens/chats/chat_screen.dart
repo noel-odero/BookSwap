@@ -21,6 +21,7 @@ class ChatScreen extends StatelessWidget {
     }
 
     final firestore = FirestoreService();
+    debugPrint('ChatScreen: current user uid=${user.uid}');
 
     return Scaffold(
       appBar: AppBar(title: const Text('Chats')),
@@ -30,7 +31,24 @@ class ChatScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+
+          if (snapshot.hasError) {
+            debugPrint('ChatScreen: stream error: ${snapshot.error}');
+            return Center(
+              child: Text('Failed to load chats: ${snapshot.error}'),
+            );
+          }
+
           final docs = snapshot.data ?? [];
+          // Debug: log docs to console to help diagnose empty list issues
+          try {
+            debugPrint('ChatScreen: received ${docs.length} chat docs');
+            for (var d in docs) {
+              debugPrint(' chat doc id=${d.id} data=${d.data()}');
+            }
+          } catch (e) {
+            debugPrint('ChatScreen: debug print failed: $e');
+          }
           if (docs.isEmpty) {
             return const Center(child: Text('No conversations yet'));
           }
