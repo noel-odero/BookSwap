@@ -54,7 +54,22 @@ class FirestoreService {
     final data = <String, dynamic>{'status': status.label};
     if (offeredBy != null) data['offeredBy'] = offeredBy;
     if (offeredTo != null) data['offeredTo'] = offeredTo;
-    await _booksRef.doc(bookId).update(data);
+    try {
+      // Log the attempted update for debugging (web console)
+      // ignore: avoid_print
+      print('FirestoreService.updateBookStatus: updating $bookId with $data');
+      await _booksRef.doc(bookId).update(data);
+    } on FirebaseException catch (e) {
+      // ignore: avoid_print
+      print(
+        'FirestoreService.updateBookStatus: FirebaseException ${e.code} ${e.message}',
+      );
+      rethrow;
+    } catch (e) {
+      // ignore: avoid_print
+      print('FirestoreService.updateBookStatus: unexpected error $e');
+      rethrow;
+    }
   }
 
   Future<void> deleteBook(String bookId) async {
@@ -129,12 +144,28 @@ class FirestoreService {
       'text': text,
       'timestamp': FieldValue.serverTimestamp(),
     };
-    // Add message
-    await messagesRef.add(data);
-    // Update chat meta
-    await _chatsRef.doc(chatId).update({
-      'lastMessage': text,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      // ignore: avoid_print
+      print(
+        'FirestoreService.sendMessage: chat=$chatId sender=$senderId text=$text',
+      );
+      // Add message
+      await messagesRef.add(data);
+      // Update chat meta
+      await _chatsRef.doc(chatId).update({
+        'lastMessage': text,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (e) {
+      // ignore: avoid_print
+      print(
+        'FirestoreService.sendMessage: FirebaseException ${e.code} ${e.message}',
+      );
+      rethrow;
+    } catch (e) {
+      // ignore: avoid_print
+      print('FirestoreService.sendMessage: unexpected error $e');
+      rethrow;
+    }
   }
 }

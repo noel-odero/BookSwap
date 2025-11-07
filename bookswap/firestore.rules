@@ -1,6 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
     // Books: public read, authenticated owners may create/update/delete their own books
     match /books/{bookId} {
       // Anyone (including unauthenticated) can read/list books for browsing
@@ -10,9 +11,23 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.ownerId == request.auth.uid;
 
-      // Only the owner can update or delete their book
-      allow update, delete: if request.auth != null
+      // Allow delete only by owner
+      allow delete: if request.auth != null
         && resource.data.ownerId == request.auth.uid;
+
+      // Allow updates by owner OR allow initiating/accepting an offer:
+      allow update: if request.auth != null && (
+        // Owner may update any fields (including accepting/rejecting offers)
+        request.auth.uid == resource.data.ownerId
+        || (
+          // Non-owner may create a pending offer on an available book
+          resource.data.status == 'available'
+          && request.resource.data.status == 'pending'
+          && request.auth.uid == request.resource.data.offeredBy
+          // Ensure they're not changing the ownerId when creating offer
+          && request.resource.data.ownerId == resource.data.ownerId
+        )
+      );
     }
 
     // Users: public read of basic profile info (displayName), writes allowed only by the user
@@ -22,6 +37,9 @@ service cloud.firestore {
 
       // Only the authenticated user can create or update their own profile
       allow create, update: if request.auth != null && request.auth.uid == userId;
+      
+      // Optionally allow delete (uncomment if needed)
+      // allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
     // Chats: only participants can access/modify chat docs and messages
@@ -34,7 +52,12 @@ service cloud.firestore {
       // Only participants can read or update the chat doc
       allow read, update: if request.auth != null
         && request.auth.uid in resource.data.participants;
+      
+      // Allow delete only if user is a participant (optional)
+      allow delete: if request.auth != null
+        && request.auth.uid in resource.data.participants;
 
+      // Messages subcollection
       match /messages/{messageId} {
         // Allow creating a message if senderId matches auth and user is a participant
         allow create: if request.auth != null
@@ -44,6 +67,11 @@ service cloud.firestore {
         // Only participants can read messages
         allow read: if request.auth != null
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        
+        // Only message sender or chat participants can update/delete messages
+        allow update, delete: if request.auth != null
+          && (request.auth.uid == resource.data.senderId
+            || request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants);
       }
     }
   }

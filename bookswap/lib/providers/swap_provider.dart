@@ -64,6 +64,9 @@ class SwapProvider with ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
+      // Provide richer debug info for web console
+      // ignore: avoid_print
+      print('SwapProvider.initiateSwap: error type=${e.runtimeType} error=$e');
       _error = e.toString();
       _setLoading(false);
       return false;
