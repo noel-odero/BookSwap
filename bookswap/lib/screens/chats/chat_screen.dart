@@ -52,69 +52,104 @@ class ChatScreen extends StatelessWidget {
           if (docs.isEmpty) {
             return const Center(child: Text('No conversations yet'));
           }
-          return ListView.separated(
-            padding: const EdgeInsets.all(12),
-            itemCount: docs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final doc = docs[index];
-              final data = doc.data() as Map<String, dynamic>? ?? {};
-              final participants = List<String>.from(
-                data['participants'] ?? [],
-              );
-              final peerId = participants.firstWhere(
-                (p) => p != user.uid,
-                orElse: () => user.uid,
-              );
-              final lastMessage = data['lastMessage'] as String? ?? '';
-              final updatedAt = data['updatedAt'] as Timestamp?;
 
-              return ListTile(
-                tileColor: Theme.of(context).colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                title: FutureBuilder(
-                  future: FirestoreService().getUserDoc(peerId),
-                  builder: (context, snap) {
-                    if (snap.connectionState == ConnectionState.waiting) {
-                      return Text(peerId == user.uid ? 'You' : peerId);
-                    }
-                    if (snap.hasData) {
-                      final data =
-                          (snap.data as DocumentSnapshot).data()
-                              as Map<String, dynamic>? ??
-                          {};
-                      final name = data['displayName'] as String? ?? peerId;
-                      return Text(name);
-                    }
-                    return Text(peerId == user.uid ? 'You' : peerId);
-                  },
-                ),
-                subtitle: Text(
-                  lastMessage,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: updatedAt != null
-                    ? Text(
-                        updatedAt.toDate().toLocal().toString().split(' ')[0],
-                        style: const TextStyle(fontSize: 12),
-                      )
-                    : null,
-                onTap: () async {
-                  final chatId = FirestoreService().chatIdFor(user.uid, peerId);
-                  // Capture navigator to avoid using context after await
-                  final navigator = Navigator.of(context);
-                  await FirestoreService().ensureChatExists(chatId, [
-                    user.uid,
-                    peerId,
-                  ]);
-                  navigator.push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ConversationScreen(chatId: chatId, peerId: peerId),
+          return StreamBuilder<List<QueryDocumentSnapshot>>(
+            stream: FirestoreService().getUserReadStatuses(user.uid),
+            builder: (context, statusSnap) {
+              final statusDocs = statusSnap.data ?? [];
+              final Map<String, int> unreadMap = {};
+              for (var d in statusDocs) {
+                final data = d.data() as Map<String, dynamic>? ?? {};
+                final chatId = data['chatId'] as String? ?? d.id;
+                final unread = (data['unreadCount'] is int)
+                    ? data['unreadCount'] as int
+                    : (data['unreadCount'] is num)
+                        ? (data['unreadCount'] as num).toInt()
+                        : 0;
+                unreadMap[chatId] = unread;
+              }
+
+              return ListView.separated(
+                padding: const EdgeInsets.all(12),
+                itemCount: docs.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final doc = docs[index];
+                  final data = doc.data() as Map<String, dynamic>? ?? {};
+                  final participants = List<String>.from(
+                    data['participants'] ?? [],
+                  );
+                  final peerId = participants.firstWhere(
+                    (p) => p != user.uid,
+                    orElse: () => user.uid,
+                  );
+                  final lastMessage = data['lastMessage'] as String? ?? '';
+                  final updatedAt = data['updatedAt'] as Timestamp?;
+                  final unreadForThis = unreadMap[doc.id] ?? 0;
+
+                  return ListTile(
+                    tileColor: Theme.of(context).colorScheme.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    title: FutureBuilder(
+                      future: FirestoreService().getUserDoc(peerId),
+                      builder: (context, snap) {
+                        if (snap.connectionState == ConnectionState.waiting) {
+                          return Text(peerId == user.uid ? 'You' : peerId);
+                        }
+                        if (snap.hasData) {
+                          final data =
+                              (snap.data as DocumentSnapshot).data()
+                                  as Map<String, dynamic>? ??
+                              {};
+                          final name = data['displayName'] as String? ?? peerId;
+                          return Text(name);
+                        }
+                        return Text(peerId == user.uid ? 'You' : peerId);
+                      },
+                    ),
+                    subtitle: Text(
+                      lastMessage,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (unreadForThis > 0)
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          if (unreadForThis > 0) const SizedBox(width: 8),
+                          if (updatedAt != null)
+                            Text(
+                              updatedAt.toDate().toLocal().toString().split(' ')[0],
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                        ]),
+                    onTap: () async {
+                      final chatId = FirestoreService().chatIdFor(user.uid, peerId);
+                      // Capture navigator to avoid using context after await
+                      final navigator = Navigator.of(context);
+                      await FirestoreService().ensureChatExists(chatId, [
+                        user.uid,
+                        peerId,
+                      ]);
+                      // mark chat read when opening the conversation
+                      await FirestoreService().markChatRead(chatId: chatId, userId: user.uid);
+                      navigator.push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ConversationScreen(chatId: chatId, peerId: peerId),
+                        ),
+                      );
+                    },
                   );
                 },
               );

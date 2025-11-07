@@ -22,15 +22,40 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     final books = booksProvider.userBooks;
     final offers = swapProvider.myOffers;
 
+    final currentUser = Provider.of<AuthProvider>(context).currentUser;
+    final hasIncomingOffers = currentUser != null
+        ? offers.any(
+            (b) =>
+                b.ownerId == currentUser.uid && b.status == SwapStatus.pending,
+          )
+        : false;
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('My Listings'),
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Listings'),
-              Tab(text: 'My Offers'),
+              const Tab(text: 'Listings'),
+              Tab(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('My Offers'),
+                    if (hasIncomingOffers) const SizedBox(width: 8),
+                    if (hasIncomingOffers)
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

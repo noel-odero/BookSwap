@@ -5,6 +5,8 @@ class FirestoreService {
   final CollectionReference _booksRef;
   final CollectionReference _chatsRef;
   final CollectionReference _usersRef;
+  // userReadStatus root is accessed per-user (userReadStatus/{userId}/chats/{chatId})
+  // we'll construct references ad-hoc where needed
 
   FirestoreService()
     : _booksRef = FirebaseFirestore.instance.collection('books'),
@@ -136,6 +138,7 @@ class FirestoreService {
     required String senderId,
     required String senderName,
     required String text,
+    List<String>? recipients,
   }) async {
     final messagesRef = _chatsRef.doc(chatId).collection('messages');
     final data = {
@@ -152,10 +155,21 @@ class FirestoreService {
       // Add message
       await messagesRef.add(data);
       // Update chat meta
+      // Also update the chat meta
       await _chatsRef.doc(chatId).update({
         'lastMessage': text,
         'updatedAt': FieldValue.serverTimestamp(),
+        // store per-user last read timestamps in a map field 'lastRead' for sender
+        'lastRead.$senderId': FieldValue.serverTimestamp(),
       });
+
+      // If recipients were provided, increment their per-user unread counters
+      if (recipients != null && recipients.isNotEmpty) {
+        for (final r in recipients) {
+          if (r == senderId) continue;
+          await _incrementUserUnread(userId: r, chatId: chatId);
+        }
+      }
     } on FirebaseException catch (e) {
       // ignore: avoid_print
       print(
@@ -167,5 +181,70 @@ class FirestoreService {
       print('FirestoreService.sendMessage: unexpected error $e');
       rethrow;
     }
+  }
+
+  /// Mark a chat as read for a specific user by updating the per-user lastRead map
+  Future<void> markChatRead({
+    required String chatId,
+    required String userId,
+  }) async {
+    try {
+      // Update chat-level lastRead map
+      await _chatsRef.doc(chatId).update({
+        'lastRead.$userId': FieldValue.serverTimestamp(),
+      });
+      // Reset per-user unread counter in userReadStatus
+      await _resetUserUnread(userId: userId, chatId: chatId);
+    } catch (e) {
+      // ignore: avoid_print
+      print('FirestoreService.markChatRead: failed to mark read $e');
+    }
+  }
+
+  // -------------------- userReadStatus helpers --------------------
+
+  CollectionReference _userChatsRef(String userId) {
+    return FirebaseFirestore.instance
+        .collection('userReadStatus')
+        .doc(userId)
+        .collection('chats');
+  }
+
+  Future<void> _incrementUserUnread({
+    required String userId,
+    required String chatId,
+  }) async {
+    final docRef = _userChatsRef(userId).doc(chatId);
+    try {
+      await docRef.set({
+        'chatId': chatId,
+        'unreadCount': FieldValue.increment(1),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      // ignore: avoid_print
+      print('FirestoreService._incrementUserUnread: $e');
+    }
+  }
+
+  Future<void> _resetUserUnread({
+    required String userId,
+    required String chatId,
+  }) async {
+    final docRef = _userChatsRef(userId).doc(chatId);
+    try {
+      await docRef.set({
+        'chatId': chatId,
+        'lastRead': FieldValue.serverTimestamp(),
+        'unreadCount': 0,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      // ignore: avoid_print
+      print('FirestoreService._resetUserUnread: $e');
+    }
+  }
+
+  /// Stream the user's read-status documents under userReadStatus/{userId}/chats
+  Stream<List<QueryDocumentSnapshot>> getUserReadStatuses(String userId) {
+    return _userChatsRef(userId).snapshots().map((snap) => snap.docs);
   }
 }

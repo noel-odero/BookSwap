@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -152,6 +154,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: const Text('About'),
                   trailing: const Icon(Icons.info_outline),
                   onTap: _showAbout,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              Card(
+                color: cardColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListTile(
+                  title: const Text('Sign out'),
+                  trailing: const Icon(Icons.logout),
+                  onTap: () async {
+                    final ok = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Sign out'),
+                        content: const Text(
+                          'Are you sure you want to sign out?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Sign out'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (ok == true) {
+                      final authProv = Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      );
+                      final messenger = ScaffoldMessenger.of(context);
+                      await authProv.signOut();
+                      if (!mounted) return;
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Signed out')),
+                      );
+                    }
+                  },
                 ),
               ),
             ],

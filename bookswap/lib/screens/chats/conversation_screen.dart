@@ -48,8 +48,11 @@ class _ConversationScreenState extends State<ConversationScreen> {
         senderId: me.uid,
         senderName: me.displayName ?? 'Unknown',
         text: text,
+        recipients: [widget.peerId],
       );
       debugPrint('Message sent: chat=${widget.chatId} sender=${me.uid}');
+      // mark as read for the sender (sendMessage also sets this, but keep explicit)
+      await _fs.markChatRead(chatId: widget.chatId, userId: me.uid);
       _ctrl.clear();
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('Send failed: $e')));
@@ -91,6 +94,12 @@ class _ConversationScreenState extends State<ConversationScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final docs = snapshot.data ?? [];
+                // mark chat as read for current user when messages load
+                // use the 'me' captured from build's context
+                if (me != null) {
+                  // best-effort: do not await to avoid blocking UI
+                  _fs.markChatRead(chatId: widget.chatId, userId: me.uid);
+                }
                 return ListView.builder(
                   padding: const EdgeInsets.all(12),
                   itemCount: docs.length,

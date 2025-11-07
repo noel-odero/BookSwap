@@ -5,7 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/book.dart';
 import 'package:provider/provider.dart';
 import '../services/firestore_service.dart';
+import '../providers/books_provider.dart';
 import '../screens/chats/conversation_screen.dart';
+import '../screens/profile/owner_profile_screen.dart';
 import '../providers/swap_provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -134,43 +136,73 @@ class BookCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: book.imageUrl != null
-                    ? (() {
-                        final url = book.imageUrl!;
-                        if (url.startsWith('data:')) {
-                          try {
-                            final parts = url.split(',');
-                            final b64 = parts.length > 1 ? parts[1] : '';
-                            final bytes = base64Decode(b64);
-                            return Image.memory(
-                              bytes,
-                              width: 68,
-                              height: 96,
-                              fit: BoxFit.cover,
-                            );
-                          } catch (_) {
-                            return const SizedBox(
-                              width: 68,
-                              height: 96,
-                              child: Icon(Icons.broken_image),
-                            );
-                          }
-                        }
-                        return Image.network(
-                          url,
+              // image with optional pending-offer badge (if owner sees a pending offer)
+              Builder(
+                builder: (context) {
+                  final currentUserId = Provider.of<AuthProvider>(
+                    context,
+                    listen: false,
+                  ).currentUser?.uid;
+                  final showOfferBadge =
+                      currentUserId != null &&
+                      currentUserId == book.ownerId &&
+                      book.status == SwapStatus.pending;
+
+                  Widget imageWidget;
+                  if (book.imageUrl != null) {
+                    final url = book.imageUrl!;
+                    if (url.startsWith('data:')) {
+                      try {
+                        final parts = url.split(',');
+                        final b64 = parts.length > 1 ? parts[1] : '';
+                        final bytes = base64Decode(b64);
+                        imageWidget = Image.memory(
+                          bytes,
                           width: 68,
                           height: 96,
                           fit: BoxFit.cover,
                         );
-                      })()
-                    : const SizedBox(
+                      } catch (_) {
+                        imageWidget = const SizedBox(
+                          width: 68,
+                          height: 96,
+                          child: Icon(Icons.broken_image),
+                        );
+                      }
+                    } else {
+                      imageWidget = Image.network(
+                        url,
                         width: 68,
                         height: 96,
-                        child: Icon(Icons.book),
+                        fit: BoxFit.cover,
+                      );
+                    }
+                  } else {
+                    imageWidget = const SizedBox(
+                      width: 68,
+                      height: 96,
+                      child: Icon(Icons.book),
+                    );
+                  }
+
+                  return Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: imageWidget,
                       ),
+                      if (showOfferBadge)
+                        const Positioned(
+                          top: 4,
+                          right: 4,
+                          child: CircleAvatar(
+                            radius: 6,
+                            backgroundColor: Colors.red,
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(width: 12),
 
@@ -202,32 +234,43 @@ class BookCard extends StatelessWidget {
                           }
                         }
 
-                        return Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 12,
-                              backgroundColor: Colors.grey[300],
-                              backgroundImage:
-                                  (photoUrl != null &&
-                                      photoUrl.startsWith('http'))
-                                  ? NetworkImage(photoUrl)
-                                  : null,
-                              child: (photoUrl == null)
-                                  ? Text(
-                                      _initials(displayName),
-                                      style: const TextStyle(fontSize: 10),
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                '$displayName • ${book.condition.label}',
-                                style: Theme.of(context).textTheme.bodySmall,
-                                overflow: TextOverflow.ellipsis,
+                        return InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    OwnerProfileScreen(userId: book.ownerId),
                               ),
-                            ),
-                          ],
+                            );
+                          },
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 12,
+                                backgroundColor: Colors.grey[300],
+                                backgroundImage:
+                                    (photoUrl != null &&
+                                        photoUrl.startsWith('http'))
+                                    ? NetworkImage(photoUrl)
+                                    : null,
+                                child: (photoUrl == null)
+                                    ? Text(
+                                        _initials(displayName),
+                                        style: const TextStyle(fontSize: 10),
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  '$displayName • ${book.condition.label}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       },
                     ),
@@ -300,7 +343,6 @@ class BookCard extends StatelessWidget {
                                 );
 
                                 if (!context.mounted) return;
-
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
@@ -363,6 +405,70 @@ class BookCard extends StatelessWidget {
                           ),
                         ),
                       );
+                    },
+                  ),
+                  // Delete button for owners
+                  Builder(
+                    builder: (context) {
+                      final authProvider = Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      );
+                      final currentUserId = authProvider.currentUser?.uid;
+                      if (currentUserId != null &&
+                          currentUserId == book.ownerId) {
+                        return IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                          ),
+                          onPressed: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Delete listing'),
+                                content: const Text(
+                                  'Are you sure you want to delete this listing? This cannot be undone.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirmed != true) return;
+
+                            final booksProv = Provider.of<BooksProvider>(
+                              context,
+                              listen: false,
+                            );
+                            final success = await booksProv.deleteBook(
+                              book.id ?? '',
+                              book.imageUrl,
+                            );
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  success
+                                      ? 'Listing deleted'
+                                      : (booksProv.error ?? 'Failed to delete'),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }
+                      return const SizedBox.shrink();
                     },
                   ),
                 ],
