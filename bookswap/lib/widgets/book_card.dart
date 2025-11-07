@@ -50,6 +50,17 @@ class BookCard extends StatelessWidget {
                         child: ElevatedButton(
                           onPressed: book.status == SwapStatus.available
                               ? () async {
+                                  // Capture dependencies before awaiting dialogs to
+                                  // avoid using context across async gaps.
+                                  final authProvider =
+                                      Provider.of<AuthProvider>(
+                                        context,
+                                        listen: false,
+                                      );
+                                  final messenger = ScaffoldMessenger.of(
+                                    context,
+                                  );
+
                                   Navigator.pop(context);
                                   final confirmed = await showDialog<bool>(
                                     context: context,
@@ -74,19 +85,11 @@ class BookCard extends StatelessWidget {
                                   );
 
                                   if (confirmed == true) {
-                                    if (!context.mounted) return;
-                                    final authProvider =
-                                        Provider.of<AuthProvider>(
-                                          context,
-                                          listen: false,
-                                        );
                                     final currentUserId =
                                         authProvider.currentUser?.uid;
                                     if (currentUserId == null ||
                                         book.id == null) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
+                                      messenger.showSnackBar(
                                         const SnackBar(
                                           content: Text(
                                             'You must be signed in to send a swap',
@@ -105,7 +108,7 @@ class BookCard extends StatelessWidget {
 
                                     if (!context.mounted) return;
 
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    messenger.showSnackBar(
                                       SnackBar(
                                         content: Text(
                                           success
@@ -423,6 +426,14 @@ class BookCard extends StatelessWidget {
                             color: Colors.redAccent,
                           ),
                           onPressed: () async {
+                            // Capture dependencies before showing dialog to avoid
+                            // using BuildContext after await.
+                            final booksProv = Provider.of<BooksProvider>(
+                              context,
+                              listen: false,
+                            );
+                            final messenger = ScaffoldMessenger.of(context);
+
                             final confirmed = await showDialog<bool>(
                               context: context,
                               builder: (context) => AlertDialog(
@@ -447,16 +458,12 @@ class BookCard extends StatelessWidget {
 
                             if (confirmed != true) return;
 
-                            final booksProv = Provider.of<BooksProvider>(
-                              context,
-                              listen: false,
-                            );
                             final success = await booksProv.deleteBook(
                               book.id ?? '',
                               book.imageUrl,
                             );
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(
                                 content: Text(
                                   success

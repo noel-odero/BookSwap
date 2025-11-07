@@ -168,6 +168,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: const Text('Sign out'),
                   trailing: const Icon(Icons.logout),
                   onTap: () async {
+                    // Capture dependencies before awaiting the dialog to avoid
+                    // using BuildContext across async gaps.
+                    final authProv = Provider.of<AuthProvider>(
+                      context,
+                      listen: false,
+                    );
+                    final messenger = ScaffoldMessenger.of(context);
+
                     final ok = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -188,11 +196,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     );
                     if (ok == true) {
-                      final authProv = Provider.of<AuthProvider>(
-                        context,
-                        listen: false,
-                      );
-                      final messenger = ScaffoldMessenger.of(context);
                       await authProv.signOut();
                       if (!mounted) return;
                       messenger.showSnackBar(
