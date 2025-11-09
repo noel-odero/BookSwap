@@ -1,6 +1,6 @@
 # BookSwap
 
-BookSwap is a Flutter mobile app (Android/iOS) that lets students list textbooks to swap, make swap offers, and chat with other students. The app uses Firebase for Authentication and Cloud Firestore for real-time data storage. This repository contains the full source code for the app used in the Individual Assignment 2.
+BookSwap is a Flutter mobile app (Android/iOS) that lets students list textbooks to swap, make swap offers, and chat with other students. The app uses Firebase for Authentication and Cloud Firestore for real-time data storage. This repository contains the full source code for the app.
 
 ---
 
@@ -13,7 +13,6 @@ BookSwap is a Flutter mobile app (Android/iOS) that lets students list textbooks
 - Running the app (emulator / device)
 - Common troubleshooting & fixes
 - Developer workflow and commands
-- Demo checklist (what to show in video)
 - Contribution & license
 
 ---
@@ -28,10 +27,10 @@ This app demonstrates a small marketplace where students can:
 State management: Provider (ChangeNotifier) is used (`AuthProvider`, `BooksProvider`, `SwapProvider`).
 
 Firestore usage (high level):
-- `books` collection — documents for listings
-- `users` collection — profiles
-- `chats` collection — chat meta and `messages` subcollections
-- `userReadStatus/{userId}/chats/{chatId}` — per-user unread counters (badges)
+- `users` collection - profiles
+- `books` collection - documents for listings
+- `chats` collection - chat meta and `messages` subcollections
+- `userReadStatus/{userId}/chats/{chatId}` - per-user unread counters (badges)
 
 ---
 
@@ -81,8 +80,8 @@ bookswap/
 3. Create Firestore database (test mode while developing, then tighten rules)
 4. (Optional) Enable Firebase Storage if you want to store images there. The app supports a data-URL fallback when Storage isn't available.
 5. Download and place platform config files if you plan to run on devices/emulators:
-   - Android: `android/app/google-services.json` (DO NOT commit this to source)
-   - iOS: `ios/Runner/GoogleService-Info.plist` (DO NOT commit this)
+   - Android: `android/app/google-services.json`
+   - iOS: `ios/Runner/GoogleService-Info.plist
 
 ---
 
@@ -118,35 +117,3 @@ bookswap/
 
 ---
 
-## Demo checklist (what to show in video)
-- Sign up, verify email, sign in/out (show Firebase console)
-- Post a book (show Firestore document created)
-- Edit and delete listings (Firestore reflected)
-- Make swap offer, accept/reject (Firestore reflected)
-- Chat messages and unread badge behavior (Firestore reflected)
-- Show Dart Analyzer output
-
----
-
-## Contribution & license
-If you want to contribute, fork and submit pull requests. This repo is for the Individual Assignment 2 submission; do not publish secrets.
-
----
-
-If you'd like I can expand this README with: sample `.firestore.indexes.json` entries, exact firebase rules snippets, and short developer notes on how to test using the Firestore emulator. Ask and I will add them.
-# bookswap
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
